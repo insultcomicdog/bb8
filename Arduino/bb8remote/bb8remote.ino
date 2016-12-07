@@ -4,12 +4,15 @@
 #include "printf.h"
 
 
-int joyX = A0; // analog pin used to connect the X - axis of Joystick
-int joyY = A1; // analog pin used to connect the Y - axis of Joystick
-int joyButton = 2;     // the number of the Joystick button pin
+int headJoyX = A0; // analog pin used to connect the X - axis of Joystick
+int headJoyY = A1; // analog pin used to connect the Y - axis of Joystick
+int headJoyButton = 2;     // the number of the Joystick button pin
 
-int x; // variables to read the values from the analog pins 
-int y; 
+int flywheelJoyX = A2; // analog pin used to connect the X - axis of Joystick
+
+int lookx; // variables to read the values from the analog pins 
+int looky; 
+int swivelx; // variables to read the values from the analog pins 
 int buttonState = 0;         // variable for reading the pushbutton status
 
 
@@ -42,7 +45,7 @@ void setup() {
    
   radio.openWritingPipe(pipes[0]);
   radio.openReadingPipe(1, pipes[1]); // Head
-  //radio.openReadingPipe(2, pipes[2]); // Body
+  radio.openReadingPipe(2, pipes[2]); // Body
   radio.startListening();
   //radio.printDetails();
 }
@@ -53,19 +56,23 @@ void loop() {
   // First, stop listening so we can talk.
   radio.stopListening();
   
-  x = joyX;    // reads the value of the Joystick's X - axis (value between 0 and 1023) 
-  y = joyY;    // reads the value of the Joystick's Y - axis (value between 0 and 1023) 
-  x = map(analogRead(joyX), 0, 1023, 0, 360); // scale it to use with the servo b/w 900 usec to 2100 usec
-  y = map(analogRead(joyY), 0, 1023, 0, 360);
+  lookx = headJoyX;    // reads the value of the Joystick's X - axis (value between 0 and 1023) 
+  looky = headJoyY;    // reads the value of the Joystick's Y - axis (value between 0 and 1023) 
+  lookx = map(analogRead(headJoyX), 0, 1023, 20, 160); // use for crs
+  //lookx = map(analogRead(headJoyX), 0, 1023, 0, 180); //use for 180 servo
+  looky = map(analogRead(headJoyY), 0, 1023, 55, 180);
   
-  if(digitalRead(joyButton)==0){
+  swivelx = analogRead(flywheelJoyX);    // reads the value of the Joystick's X - axis (value between 0 and 1023) 
+  
+  if(digitalRead(headJoyButton)==0){
     buttonState=1;
   } else{
     buttonState=0;
   }
   
-  //Serial.println(x);
-  //Serial.println(y);
+//  Serial.println(swivelx);
+//  Serial.println(lookx);
+//  Serial.println(looky);
   //Serial.println(buttonState);
   
   // Take the time, and send it.  This will block until complete
@@ -73,9 +80,9 @@ void loop() {
     Serial.print("Now sending ");
     transmit_data.forward = 0;
     transmit_data.lean = 0;
-    transmit_data.swivel = x;
-    transmit_data.nod = y;
-    transmit_data.look = 0;
+    transmit_data.swivel = swivelx;
+    transmit_data.look = lookx;
+    transmit_data.nod = looky;
     transmit_data.sound = buttonState;
     transmit_data.timestamp = millis();
     bool ok = radio.write( &transmit_data, sizeof(transmit_data) );
